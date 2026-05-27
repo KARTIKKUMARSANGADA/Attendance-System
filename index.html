@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+        :root {
+      --bg: #000000;
+      --bg-mesh: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(129, 140, 248, 0.15), transparent),
+                 radial-gradient(ellipse 60% 40% at 100% 100%, rgba(56, 189, 248, 0.12), transparent);
+      --surface: rgba(18, 18, 22, 0.7);
+      --card: rgba(255, 255, 255, 0.02);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --border: rgba(255, 255, 255, 0.06);
+      --text: #ffffff;
+      --text-muted: #a1a1aa;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.4);
+      --accent-dim: #818cf8;
+      --danger: #fb7185;
+      --danger-bg: rgba(251, 113, 133, 0.12);
+      --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+      --radius: 24px;
+      --radius-sm: 12px;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      background-image: var(--bg-mesh);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 1.5rem 1rem 2rem;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      letter-spacing: -0.011em;
+      font-feature-settings: "cv02", "cv05", "cv08", "cv09", "cv11";
+    }
+
+    .dashboard {
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+      animation: fadeUp 0.5s ease-out;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .app-header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .app-header p {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin: 0.25rem 0 0 0;
+    }
+
+    .profile-trigger {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      cursor: help;
+      position: relative;
+      padding: 0.35rem 0.5rem;
+      margin: -0.35rem -0.5rem;
+      border-radius: var(--radius-sm);
+      transition: background 0.15s;
+    }
+    .profile-trigger:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .profile-trigger.profile-empty { display: none; }
+    .profile-trigger .profile-avatar-wrap {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.06);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: -0.02em;
+    }
+    .profile-trigger .profile-avatar-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .profile-trigger-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    @media (max-width: 480px) {
+      .profile-trigger-name { display: none; }
+    }
+
+    .profile-popover {
+      position: fixed;
+      z-index: 1000;
+      min-width: 260px;
+      max-width: 320px;
+      padding: 1rem 1.15rem;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow), 0 20px 40px rgba(0,0,0,0.4);
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(6px);
+      transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+    }
+    .profile-popover.visible {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .profile-popover .popover-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0 0 0.35rem 0;
+    }
+    .profile-popover .popover-role {
+      font-size: 0.8125rem;
+      color: var(--accent);
+      font-weight: 600;
+      margin: 0 0 0.5rem 0;
+    }
+    .profile-popover .popover-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin: 0;
+      line-height: 1.5;
+    }
+    .profile-popover .popover-row {
+      margin-top: 0.4rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .profile-popover .popover-row strong { color: var(--text); }
+
+    .card {
+      background: var(--card);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--card-border);
+      padding: 1.25rem 1.5rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      border-color: rgba(255, 255, 255, 0.09);
+    }
+
+    .card-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .today-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.6fr 1fr;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      .today-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .today-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .today-panel .stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      gap: 0.5rem;
+    }
+
+    .today-panel .stat:last-child {
+      border-bottom: none;
+    }
+
+    .today-panel .stat .label {
+      font-size: 0.8125rem;
+    }
+
+    .today-panel .stat .value {
+      font-size: 0.875rem;
+    }
+
+
+
+    .progress-wrap {
+      margin-top: 1.25rem;
+    }
+
+    .progress-wrap .label {
+      font-size: 0.7rem;
+      margin-bottom: 0.35rem;
+      display: block;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+      border-radius: 999px;
+      transition: width 0.4s ease;
+      min-width: 4px;
+    }
+
+    .today-target .stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.45rem 0;
+      font-size: 0.8125rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .today-target .stat:last-child {
+      border-bottom: none;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      gap: 0.75rem;
+    }
+
+    .row:hover {
+      background: rgba(255, 255, 255, 0.02);
+      margin: 0 -0.5rem;
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .row:last-child {
+      border-bottom: none;
+    }
+
+    .label {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .value {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+    }
+
+    .value.live {
+      color: var(--accent);
+      text-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      transition: transform 0.15s;
+    }
+
+    .status.clocked-in {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .status.clocked-in::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .status.clocked-out {
+      background: rgba(113, 113, 122, 0.2);
+      color: var(--text-muted);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .status.none {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid rgba(248, 113, 113, 0.25);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .error-card {
+      background: var(--danger-bg);
+      border-color: rgba(248, 113, 113, 0.3);
+      color: var(--danger);
+    }
+
+    .error-card .label {
+      color: var(--danger);
+    }
+
+    .loading {
+      opacity: 0.75;
+      pointer-events: none;
+    }
+
+    .loading .value::after {
+      content: '…';
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0.3; }
+    }
+
+    .recent-days-card {
+      margin-top: 0.75rem;
+    }
+
+    .recent-days-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .recent-days-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .recent-days-empty {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      padding: 0.75rem 0;
+      text-align: center;
+    }
+
+    .day-row {
+      display: grid;
+      grid-template-columns: 1.2fr 90px 90px 90px 140px;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.85rem 1.25rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      font-size: 0.875rem;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      margin-bottom: 0.5rem;
+    }
+
+    .day-row:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.12);
+      transform: translateX(4px);
+    }
+
+    .day-row.header {
+      background: transparent;
+      border: none;
+      padding: 0.5rem 1.25rem;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      font-weight: 700;
+      margin-bottom: 0;
+    }
+
+    .day-row.header:hover {
+      background: transparent;
+    }
+
+    .day-date {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 0.8125rem;
+    }
+
+    .day-effective, .day-gross, .day-break {
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+      font-weight: 500;
+      text-align: right;
+    }
+
+    .day-row.header span {
+      text-align: right;
+    }
+
+    .day-row.header .day-date {
+      text-align: left;
+    }
+
+    .day-status-mini {
+      font-size: 0.7rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: 999px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-align: center;
+      justify-self: end;
+    }
+
+    .day-status-mini.worked {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+
+    .day-status-mini.off {
+      background: rgba(113, 113, 122, 0.15);
+      color: var(--text-muted);
+    }
+
+    .day-status-mini.none {
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
+
+    .day-status-mini.target-met {
+      background: linear-gradient(135deg, rgba(234, 179, 8, 0.25), rgba(56, 189, 248, 0.2));
+      color: #e879f9;
+      border: 1px solid rgba(232, 121, 249, 0.3);
+    }
+
+    .day-status-mini.below-target {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .day-status-mini {
+      cursor: help;
+    }
+
+    .status-tooltip {
+      position: fixed;
+      z-index: 9999;
+      padding: 0.5rem 0.75rem;
+      max-width: 260px;
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow);
+      font-size: 0.8125rem;
+      color: var(--text);
+      line-height: 1.35;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(6px) scale(0.96);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      transition-delay: 0s;
+    }
+
+    .status-tooltip.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      transition-delay: 0.08s;
+    }
+
+    .token-card {
+      margin-top: 1rem;
+      padding: 1.25rem 1.5rem;
+    }
+
+    .token-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .token-hint {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-bottom: 0.6rem;
+      line-height: 1.45;
+    }
+
+    .token-hint a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .token-hint a:hover {
+      text-decoration: underline;
+    }
+
+    .bookmarklet {
+      display: inline-block;
+      padding: 0.55rem 1rem;
+      background: linear-gradient(135deg, var(--accent-dim), var(--accent));
+      color: #fff;
+      border-radius: var(--radius-sm);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      text-decoration: none;
+      margin-bottom: 0.5rem;
+      box-shadow: 0 2px 10px var(--accent-glow);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .bookmarklet:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+
+    .token-note {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.6rem;
+    }
+
+    .token-input {
+      width: 100%;
+      max-width: 280px;
+      padding: 0.5rem 0.75rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 0.8125rem;
+      margin: 0.25rem 0.25rem 0.25rem 0;
+      transition: border-color 0.2s;
+    }
+
+    .token-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .token-btn {
+      padding: 0.5rem 0.85rem;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .token-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .today-target .stat .value { font-weight: 600; }
+    .today-target .stat .value.done { color: var(--accent); }
+    .token-card .token-input { max-width: 200px; }
+    .card-note {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border);
+      line-height: 1.35;
+    }
+
+    .token-steps {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .token-strip {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding: 0.75rem 0;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    .token-step {
+      display: block;
+    }
+
+    .link-keka {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .link-keka:hover {
+      text-decoration: underline;
+    }
+
+    .token-drag-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin: 0.5rem 0 0.25rem 0;
+    }
+
+    .token-paste-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin: 0.75rem 0 0.35rem 0;
+    }
+
+    .token-paste {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+
+    @media (max-width: 480px) {
+      .card {
+        padding: 1rem 1.25rem;
+      }
+
+      .today-hours {
+        grid-template-columns: 1fr;
+      }
+
+      .today-hours .stat.effective {
+        grid-column: 1;
+      }
+
+      .day-row {
+        grid-template-columns: 1fr auto auto 0fr auto;
+        gap: 0.5rem;
+      }
+
+      .day-row .day-break {
+        display: none;
+      }
+
+      .day-row.header .day-break {
+        display: none;
+      }
+
+      .token-strip {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .token-strip .token-paste {
+        flex-direction: column;
+      }
+
+      .token-card .token-input {
+        max-width: none;
+      }
+    }
+  
+    /* Header Gradient Text */
+    .app-header h1 {
+      background: linear-gradient(135deg, #fff 0%, #a1a1aa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.02em;
+    }
+
+    /* Pulse Glow for Clocked In */
+    @keyframes pulse-glow {
+      0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(56, 189, 248, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+    }
+    .status.clocked-in::before {
+      animation: pulse 2s ease-in-out infinite, pulse-glow 2s infinite;
+    }
+
+    /* Stat Cards */
+    .today-hours {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      border: none !important;
+    }
+    .stat-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .stat-card.effective {
+      background: rgba(56, 189, 248, 0.05);
+      border-color: rgba(56, 189, 248, 0.2);
+    }
+    .stat-card .icon-wrap {
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .stat-card.effective .icon-wrap { color: var(--accent); }
+    .stat-card .value {
+      font-size: 1.25rem;
+      text-align: left;
+    }
+
+    /* Progress Bar Glow */
+    .progress-bar {
+      background: rgba(255, 255, 255, 0.05);
+      height: 10px;
+      position: relative;
+    }
+    .progress-fill {
+      position: relative;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      animation: shimmer 2s infinite;
+    }
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* History Accent Borders */
+    .day-row {
+      border-left: 4px solid transparent;
+    }
+    .day-row.status-worked { border-left-color: var(--accent); }
+    .day-row.status-target-met { border-left-color: #e879f9; }
+    .day-row.status-off { border-left-color: var(--text-muted); }
+    .day-row.status-none { border-left-color: var(--danger); }
+    
+    .day-effective { color: var(--accent) !important; font-weight: 600 !important; }
+
+    /* Profile Glow */
+    .profile-trigger:hover {
+      box-shadow: 0 0 20px rgba(255,255,255,0.1);
+    }
+
+    </style>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div class="dashboard">
+    <header class="app-header">
+      <div>
+        <h1>Attendance</h1>
+        <p>Today & recent days</p>
+      </div>
+      <div class="profile-trigger profile-empty" id="profile-trigger" aria-describedby="profile-popover">
+        <div class="profile-avatar-wrap" id="profile-avatar">
+          <span id="profile-initial">—</span>
+        </div>
+        <span class="profile-trigger-name" id="profile-trigger-name">—</span>
+      </div>
+    </header>
+    <div id="profile-popover" class="profile-popover" role="tooltip" aria-hidden="true"></div>
+
+    <div class="card" id="card">
+      <h2 class="card-title">Today</h2>
+      <div class="today-grid">
+        <div class="today-panel today-session">
+          <div class="stat">
+            <span class="label">Clock In</span>
+            <span class="value" id="clock-in">—</span>
+          </div>
+          <div class="stat">
+            <span class="label">Clock Out</span>
+            <span class="value" id="clock-out">—</span>
+          </div>
+          <div class="stat">
+            <span class="label">Status</span>
+            <span class="status none" id="status">Loading…</span>
+          </div>
+        </div>
+        <div class="today-panel today-hours-wrap">
+                    <div class="today-hours">
+            <div class="stat-card effective">
+              <div class="icon-wrap"><i data-lucide="zap" width="14" height="14"></i> Effective</div>
+              <span class="value live" id="effective-hours">—</span>
+            </div>
+            <div class="stat-card">
+              <div class="icon-wrap"><i data-lucide="coffee" width="14" height="14"></i> Break</div>
+              <span class="value" id="break-hours">—</span>
+            </div>
+            <div class="stat-card">
+              <div class="icon-wrap"><i data-lucide="clock" width="14" height="14"></i> Gross</div>
+              <span class="value" id="gross-hours">—</span>
+            </div>
+          </div>
+          <div class="progress-wrap">
+            <span class="label">Progress to target (8h)</span>
+            <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+              <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="today-panel today-target">
+          <div class="stat">
+            <span class="label">Target</span>
+            <span class="value" id="target-effective">8h</span>
+          </div>
+          <div class="stat">
+            <span class="label">Remaining</span>
+            <span class="value" id="remaining">—</span>
+          </div>
+          <div class="stat">
+            <span class="label">Complete at (est.)</span>
+            <span class="value" id="complete-at">—</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card recent-days-card">
+      <h2 class="recent-days-title">Last few days</h2>
+      <div id="recent-days-list" class="recent-days-list"></div>
+    </div>
+
+    <div class="card token-card">
+      <p class="token-title">Token from PMS (localStorage)</p>
+      <p class="token-steps">The token lives in <strong>PMS’s</strong> site. Use it like this:</p>
+      <div class="token-strip">
+        <span class="token-step"><strong>1.</strong> <a href="https://pms.brainerhub.com/my-attendance" target="_blank" rel="noopener" class="link-keka" id="open-keka">Open PMS attendance</a> (log in if needed).</span>
+        <span class="token-step"><strong>2.</strong> Drag the green link below to your <strong>bookmarks bar</strong>.</span>
+        <span class="token-step"><strong>3.</strong> While on the PMS page, click that bookmark — it will read <code>access_token</code> from PMS’s localStorage and open this dashboard.</span>
+      </div>
+      <p class="token-drag-hint">Drag this to bookmarks, then click it on PMS:</p>
+      <a href="javascript:(function(){function findToken(s){var keys=['access_token','token','auth_token','bearer','jwt','id_token','pms_token','authToken'];for(var i=0;i<keys.length;i++){var v=s.getItem(keys[i]);if(v&&v.length>20)return v;}for(var i=0;i<s.length;i++){var k=s.key(i);var v=s.getItem(k);if(v&&v.length>100&&v.split('.').length===3)return v;}return null;}var t=findToken(localStorage)||findToken(sessionStorage);if(!t){alert('No token found. Please:\n1. Go to pms.brainerhub.com/my-attendance\n2. Make sure you are logged in\n3. Then click this bookmark again');return;}var u=window.location.origin+'/#access_token='+encodeURIComponent(t);window.open(u,'_blank');})();" class="bookmarklet" id="bookmarklet-link">Open dashboard with my token</a>
+      <p class="token-paste-label">Or paste token from DevTools → Application → Local storage (pms.brainerhub.com) → access_token:</p>
+      <div class="token-paste">
+        <input type="password" id="token-input" placeholder="Paste access_token" autocomplete="off" class="token-input">
+        <button type="button" id="token-save" class="token-btn">Use</button>
+      </div>
+    </div>
+    <div id="status-tooltip" class="status-tooltip" aria-hidden="true" role="tooltip"></div>
+  </div>
+
+    <script type="module" src="/main.js"></script>
+</body>
+</html>

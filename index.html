@@ -183,18 +183,62 @@
     .profile-popover .popover-row strong { color: var(--text); }
 
     .card {
-      background: var(--card);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      background: rgba(18, 18, 22, 0.45);
+      backdrop-filter: blur(30px) saturate(190%);
+      -webkit-backdrop-filter: blur(30px) saturate(190%);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      border: 1px solid var(--card-border);
-      padding: 1.25rem 1.5rem;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      padding: 1.5rem;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(600px circle at var(--x, 0px) var(--y, 0px), rgba(56, 189, 248, 0.15), transparent 45%);
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .card:hover::before {
+      opacity: 1;
     }
 
     .card:hover {
-      border-color: rgba(255, 255, 255, 0.09);
+      border-color: rgba(56, 189, 248, 0.25);
+      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5), 0 0 30px 0 rgba(56, 189, 248, 0.03);
+      transform: translateY(-2px);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    @media (max-width: 768px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .day-row:not(.header) {
+      animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
 
     .card-title {
@@ -834,6 +878,10 @@
       box-shadow: 0 0 20px rgba(255,255,255,0.1);
     }
 
+    .hidden {
+      display: none !important;
+    }
+
     </style>
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -907,7 +955,42 @@
           </div>
         </div>
       </div>
+      
+      <!-- Timeline Visualizer -->
+      <div class="today-timeline-wrap" id="today-timeline-wrap" style="margin-top: 1.5rem; display: none;">
+        <span class="label" style="font-size: 0.7rem; margin-bottom: 0.5rem; display: block; text-transform: uppercase; letter-spacing: 0.08em;">Today's Punch Timeline</span>
+        <div class="timeline-container" id="timeline-container" style="position: relative; height: 16px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border: 1px solid var(--border); overflow: hidden; display: flex;">
+          <!-- Segments will be dynamically added here -->
+        </div>
+        <div class="timeline-labels" style="display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-muted); margin-top: 0.35rem; font-weight: 500;">
+          <span id="timeline-start-time">—</span>
+          <span id="timeline-end-time">—</span>
+        </div>
+      </div>
 
+    </div>
+
+    <!-- Monthly Summary Statistics -->
+    <div class="card monthly-stats-card" id="monthly-stats-card" style="display: none;">
+      <h2 class="card-title" style="margin-bottom: 1rem;">This Month at a Glance</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="icon-wrap"><i data-lucide="calendar" width="14" height="14"></i> Days Present</div>
+          <span class="value" id="monthly-present">—</span>
+        </div>
+        <div class="stat-card effective">
+          <div class="icon-wrap"><i data-lucide="zap" width="14" height="14"></i> Avg Effective</div>
+          <span class="value" id="monthly-avg-effective">—</span>
+        </div>
+        <div class="stat-card">
+          <div class="icon-wrap"><i data-lucide="coffee" width="14" height="14"></i> Avg Break</div>
+          <span class="value" id="monthly-avg-break">—</span>
+        </div>
+        <div class="stat-card" style="background: rgba(232, 121, 249, 0.05); border-color: rgba(232, 121, 249, 0.2);">
+          <div class="icon-wrap" style="color: #e879f9;"><i data-lucide="trophy" width="14" height="14"></i> Target Met</div>
+          <span class="value" id="monthly-crushed">—</span>
+        </div>
+      </div>
     </div>
 
     <div class="card recent-days-card">
@@ -915,7 +998,7 @@
       <div id="recent-days-list" class="recent-days-list"></div>
     </div>
 
-    <div class="card token-card">
+    <div class="card token-card" id="token-card">
       <p class="token-title">Token from PMS (localStorage)</p>
       <p class="token-steps">The token lives in <strong>PMS’s</strong> site. Use it like this:</p>
       <div class="token-strip">
@@ -930,6 +1013,11 @@
         <input type="password" id="token-input" placeholder="Paste access_token" autocomplete="off" class="token-input">
         <button type="button" id="token-save" class="token-btn">Use</button>
       </div>
+    </div>
+    <div id="token-toggle-container" class="hidden" style="text-align: center; margin: 1rem 0;">
+      <button type="button" id="token-toggle-btn" class="token-btn" style="font-size: 0.75rem; padding: 0.35rem 0.75rem; opacity: 0.7; border-radius: var(--radius-sm);">
+        Show Token Settings
+      </button>
     </div>
     <div id="status-tooltip" class="status-tooltip" aria-hidden="true" role="tooltip"></div>
   </div>
@@ -947,11 +1035,16 @@
     let employeeId = null;
     window.employeeNumericId = null;
 
+    const PROFILE_STORAGE_KEY = 'pms_profile';
+
     function getToken() {
       const hash = window.location.hash;
       if (hash.includes('access_token=')) {
         const token = hash.split('access_token=')[1].split('&')[0];
         localStorage.setItem(STORAGE_KEY, token);
+        localStorage.removeItem(PROFILE_STORAGE_KEY);
+        employeeId = null;
+        window.employeeNumericId = null;
         window.location.hash = '';
         return token;
       }
@@ -1050,33 +1143,60 @@
       span.textContent = firstLetter;
     }
 
+    function loadCachedProfile() {
+      try {
+        const cached = localStorage.getItem(PROFILE_STORAGE_KEY);
+        if (cached) {
+          const data = JSON.parse(cached);
+          if (data && data.employeeId) {
+            employeeId = data.employeeId;
+            window.employeeNumericId = data.employeeCode || null;
+            renderProfile(data);
+            return true;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to parse cached profile', e);
+      }
+      return false;
+    }
+
     async function fetchProfile() {
       const trigger = document.getElementById('profile-trigger');
       if (!trigger) return;
-      trigger.classList.remove('profile-empty');
-      trigger.classList.add('profile-loading');
+      
+      const hasCached = loadCachedProfile();
+      if (hasCached) {
+        fetchSummary();
+      } else {
+        trigger.classList.remove('profile-empty');
+        trigger.classList.add('profile-loading');
+      }
 
       try {
         const res = await fetch(API_PROFILE, { method: 'GET', headers: getHeaders() });
         if (!res.ok) {
-          renderProfile(null);
+          if (!hasCached) renderProfile(null);
           return;
         }
         const json = await res.json();
         const data = (json && json.data) ? json.data : null;
         if (data && data.employeeId) {
-            employeeId = data.employeeId;
-        }
-        if (data && data.employeeCode) {
-            window.employeeNumericId = data.employeeCode;
-        }
-        renderProfile(data);
-        
-        if (employeeId) {
+          const oldEmployeeId = employeeId;
+          employeeId = data.employeeId;
+          window.employeeNumericId = data.employeeCode || null;
+          
+          localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(data));
+          renderProfile(data);
+          
+          if (!hasCached || oldEmployeeId !== employeeId) {
             fetchSummary();
+          }
+        } else {
+          if (!hasCached) renderProfile(null);
         }
       } catch (e) {
-        renderProfile(null);
+        if (!hasCached) renderProfile(null);
       }
     }
 
@@ -1243,7 +1363,7 @@
       const rows = [
         '<div class="day-row header"><span class="day-date">Date</span><span class="day-effective">Effective</span><span class="day-gross">Gross</span><span class="day-break">Break</span><span>Status</span></div>',
       ];
-      recent.forEach(function (record) {
+      recent.forEach(function (record, index) {
         const effectiveSecs = parseHHMM(record.totalAttendedHours);
         const effective = effectiveSecs > 0 ? formatDuration(effectiveSecs) : '00:00:00';
         
@@ -1255,7 +1375,7 @@
         const hoverQuote = getStatusHoverQuote(status.cls, record);
         const safeQuote = (hoverQuote || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         rows.push(
-          '<div class="day-row status-' + status.cls + '">' +
+          '<div class="day-row status-' + status.cls + '" style="animation-delay: ' + (index * 40) + 'ms">' +
             '<span class="day-date">' + formatDayLabel(record.date) + '</span>' +
             '<span class="day-effective">' + effective + '</span>' +
             '<span class="day-gross">' + gross + '</span>' +
@@ -1414,6 +1534,7 @@
         });
 
         renderRecentDays(historyList);
+        renderMonthlyStats(historyList, recentDays);
         renderToday(todayPunches);
         els.card.classList.remove('loading');
 
@@ -1508,6 +1629,7 @@
                     els.completeAt.textContent = '—';
                 }
             }
+            renderTimeline(punches);
         }
 
         calculateMetrics();
@@ -1517,11 +1639,205 @@
         }
     }
 
+    function updateTokenCardVisibility() {
+      const hasToken = !!getToken();
+      const tokenCard = document.getElementById('token-card');
+      const toggleContainer = document.getElementById('token-toggle-container');
+      const toggleBtn = document.getElementById('token-toggle-btn');
+      
+      if (hasToken) {
+        if (tokenCard) tokenCard.classList.add('hidden');
+        if (toggleContainer) toggleContainer.classList.remove('hidden');
+        if (toggleBtn) toggleBtn.textContent = 'Show Token Settings';
+      } else {
+        if (tokenCard) tokenCard.classList.remove('hidden');
+        if (toggleContainer) toggleContainer.classList.add('hidden');
+      }
+    }
+
     document.getElementById('token-save').onclick = () => {
       const val = document.getElementById('token-input').value;
-      if (val) { localStorage.setItem(STORAGE_KEY, val); fetchProfile(); }
+      if (val) { 
+        localStorage.setItem(STORAGE_KEY, val);
+        localStorage.removeItem(PROFILE_STORAGE_KEY);
+        employeeId = null;
+        window.employeeNumericId = null;
+        updateTokenCardVisibility();
+        fetchProfile(); 
+      }
     };
 
+    const toggleBtn = document.getElementById('token-toggle-btn');
+    if (toggleBtn) {
+      toggleBtn.onclick = () => {
+        const tokenCard = document.getElementById('token-card');
+        if (tokenCard) {
+          if (tokenCard.classList.contains('hidden')) {
+            tokenCard.classList.remove('hidden');
+            toggleBtn.textContent = 'Hide Token Settings';
+          } else {
+            tokenCard.classList.add('hidden');
+            toggleBtn.textContent = 'Show Token Settings';
+          }
+        }
+      };
+    }
+
+    function renderTimeline(punches) {
+      const container = document.getElementById('timeline-container');
+      const wrap = document.getElementById('today-timeline-wrap');
+      const startEl = document.getElementById('timeline-start-time');
+      const endEl = document.getElementById('timeline-end-time');
+      
+      if (!container || !wrap) return;
+      
+      const valid = (punches || []).filter(p => p.in && p.in !== 'Missing');
+      if (valid.length === 0) {
+        wrap.style.display = 'none';
+        return;
+      }
+      
+      wrap.style.display = 'block';
+      container.innerHTML = '';
+      
+      valid.sort((a, b) => new Date(a.in) - new Date(b.in));
+      
+      const firstIn = new Date(valid[0].in);
+      const last = valid[valid.length - 1];
+      const isCurrentlyClockedIn = (!last.out || last.out === 'Missing');
+      const now = new Date();
+      const lastOut = isCurrentlyClockedIn ? now : new Date(last.out);
+      
+      const totalMs = Math.max(1000, lastOut - firstIn);
+      
+      startEl.textContent = formatTimeShort(firstIn);
+      endEl.textContent = isCurrentlyClockedIn ? 'Now' : formatTimeShort(lastOut);
+      
+      valid.forEach((p, idx) => {
+        const inTime = new Date(p.in);
+        const outTime = (p.out && p.out !== 'Missing') ? new Date(p.out) : now;
+        
+        const workStartPct = ((inTime - firstIn) / totalMs) * 100;
+        const workWidthPct = ((outTime - inTime) / totalMs) * 100;
+        
+        const workDiv = document.createElement('div');
+        workDiv.className = 'timeline-segment work';
+        workDiv.style.left = workStartPct + '%';
+        workDiv.style.width = workWidthPct + '%';
+        workDiv.style.position = 'absolute';
+        workDiv.style.height = '100%';
+        workDiv.style.background = 'linear-gradient(90deg, var(--accent-dim), var(--accent))';
+        workDiv.style.boxShadow = '0 0 10px var(--accent-glow)';
+        workDiv.style.cursor = 'help';
+        
+        const workDur = Math.max(0, Math.floor((outTime - inTime) / 1000));
+        const tooltipText = `Work: ${formatTimeShort24(inTime)} - ${isCurrentlyClockedIn && idx === valid.length - 1 && (!p.out || p.out === 'Missing') ? 'Now' : formatTimeShort24(outTime)} (${formatDurationShort(workDur)})`;
+        workDiv.setAttribute('title', tooltipText);
+        container.appendChild(workDiv);
+        
+        if (idx < valid.length - 1) {
+          const nextIn = new Date(valid[idx + 1].in);
+          if (nextIn > outTime) {
+            const breakStartPct = ((outTime - firstIn) / totalMs) * 100;
+            const breakWidthPct = ((nextIn - outTime) / totalMs) * 100;
+            
+            const breakDiv = document.createElement('div');
+            breakDiv.className = 'timeline-segment break';
+            breakDiv.style.left = breakStartPct + '%';
+            breakDiv.style.width = breakWidthPct + '%';
+            breakDiv.style.position = 'absolute';
+            breakDiv.style.height = '100%';
+            breakDiv.style.background = 'rgba(251, 113, 133, 0.15)';
+            breakDiv.style.borderLeft = '1px dashed rgba(251, 113, 133, 0.4)';
+            breakDiv.style.borderRight = '1px dashed rgba(251, 113, 133, 0.4)';
+            breakDiv.style.cursor = 'help';
+            
+            const breakDur = Math.max(0, Math.floor((nextIn - outTime) / 1000));
+            breakDiv.setAttribute('title', `Break: ${formatTimeShort24(outTime)} - ${formatTimeShort24(nextIn)} (${formatDurationShort(breakDur)})`);
+            container.appendChild(breakDiv);
+          }
+        }
+      });
+    }
+
+    function renderMonthlyStats(historyList, recentDays) {
+      const card = document.getElementById('monthly-stats-card');
+      const presentEl = document.getElementById('monthly-present');
+      const avgEffectiveEl = document.getElementById('monthly-avg-effective');
+      const avgBreakEl = document.getElementById('monthly-avg-break');
+      const crushedEl = document.getElementById('monthly-crushed');
+      
+      if (!card) return;
+      
+      const now = new Date();
+      const presentDays = historyList.filter(d => {
+        const dDate = new Date(d.date);
+        const isToday = dDate.toDateString() === now.toDateString();
+        const secs = parseHHMM(d.totalAttendedHours);
+        return secs > 0 && !isToday;
+      });
+      
+      if (presentDays.length === 0) {
+        card.style.display = 'none';
+        return;
+      }
+      
+      card.style.display = 'block';
+      presentEl.textContent = presentDays.length;
+      
+      const totalEffectiveSecs = presentDays.reduce((acc, d) => acc + parseHHMM(d.totalAttendedHours), 0);
+      const avgEffectiveSecs = totalEffectiveSecs / presentDays.length;
+      avgEffectiveEl.textContent = formatDurationShort(avgEffectiveSecs);
+      
+      const daysWithBreaks = recentDays.filter(d => {
+        const isToday = new Date(d.date).toDateString() === now.toDateString();
+        return d._breakSecs != null && !isToday;
+      });
+      const avgBreakSecs = daysWithBreaks.length > 0
+        ? daysWithBreaks.reduce((acc, d) => acc + d._breakSecs, 0) / daysWithBreaks.length
+        : 0;
+      avgBreakEl.textContent = avgBreakSecs > 0 ? formatDurationShort(avgBreakSecs) : '—';
+      
+      const crushedCount = presentDays.filter(d => parseHHMM(d.totalAttendedHours) >= 8 * 3600).length;
+      const crushedRate = Math.round((crushedCount / presentDays.length) * 100);
+      crushedEl.textContent = `${crushedRate}%`;
+    }
+
+    function formatTimeShort(date) {
+      if (!date) return '';
+      let h = date.getHours();
+      const m = date.getMinutes().toString().padStart(2, '0');
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return `${h}:${m} ${ampm}`;
+    }
+
+    function formatTimeShort24(date) {
+      if (!date) return '';
+      const h = date.getHours().toString().padStart(2, '0');
+      const m = date.getMinutes().toString().padStart(2, '0');
+      return `${h}:${m}`;
+    }
+
+    function formatDurationShort(secs) {
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      if (h > 0) return `${h}h ${m}m`;
+      return `${m}m`;
+    }
+
+    // Interactive card mouse glow effect
+    document.addEventListener('mousemove', e => {
+      document.querySelectorAll('.card').forEach(card => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        card.style.setProperty('--x', `${x}px`);
+        card.style.setProperty('--y', `${y}px`);
+      });
+    });
+
+    updateTokenCardVisibility();
     fetchProfile();
     attachProfilePopover();
     </script>

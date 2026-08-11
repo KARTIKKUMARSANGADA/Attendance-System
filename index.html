@@ -2062,8 +2062,22 @@
       });
     });
 
+    // Dynamic Bookmarklet Target URL Generator
+    function initBookmarklet() {
+      const linkEl = document.getElementById('bookmarklet-link');
+      if (!linkEl) return;
+      const currentOrigin = (window.location.protocol === 'file:' || !window.location.host) 
+        ? 'http://localhost:8002' 
+        : window.location.origin;
+      
+      const jsCode = `javascript:(function(){function findToken(s){var keys=['access_token','token','auth_token','bearer','jwt','id_token','pms_token','authToken'];for(var i=0;i<keys.length;i++){var v=s.getItem(keys[i]);if(v&&v.length>20)return v;}for(var i=0;i<s.length;i++){var k=s.key(i);var v=s.getItem(k);if(v&&v.length>100&&v.split('.').length===3)return v;}return null;}var t=findToken(localStorage)||findToken(sessionStorage);if(!t){alert('No token found. Please:\\n1. Go to pms.brainerhub.com/my-attendance\\n2. Make sure you are logged in\\n3. Then click this bookmark again');return;}var u='${currentOrigin}/#access_token='+encodeURIComponent(t);window.open(u,'_blank');})();`;
+      
+      linkEl.setAttribute('href', jsCode);
+    }
+
     // Init App
     initTheme();
+    initBookmarklet();
     startClock();
     fetchProfile();
     attachProfilePopover();

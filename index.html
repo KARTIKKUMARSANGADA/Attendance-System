@@ -1021,7 +1021,7 @@
             </div>
             <div class="stat-row">
               <span class="label"><i data-lucide="flag" width="14" height="14" style="vertical-align:-2px;"></i> Target Shift</span>
-              <span class="value" id="target-effective">8h 00m</span>
+              <span class="value" id="target-effective">8h 30m</span>
             </div>
           </div>
 
@@ -1044,7 +1044,7 @@
 
             <div class="progress-section">
               <div class="progress-info">
-                <span>Progress to Target (8h)</span>
+                <span>Progress to Target (8h 30m)</span>
                 <span class="pct" id="progress-pct">0%</span>
               </div>
               <div class="progress-bar-track">
@@ -1118,7 +1118,7 @@
         </div>
 
         <div style="display:flex; gap:0.75rem; flex-wrap:wrap; font-size:0.75rem; color:var(--text-muted); margin-bottom:1rem;">
-          <span style="display:flex; align-items:center; gap:0.35rem;"><span style="width:10px; height:10px; border-radius:3px; background:rgba(52,211,153,0.3); border:1px solid var(--success);"></span> Target Met (8h+)</span>
+          <span style="display:flex; align-items:center; gap:0.35rem;"><span style="width:10px; height:10px; border-radius:3px; background:rgba(52,211,153,0.3); border:1px solid var(--success);"></span> Target Met (8h 30m+)</span>
           <span style="display:flex; align-items:center; gap:0.35rem;"><span style="width:10px; height:10px; border-radius:3px; background:rgba(251,191,36,0.3); border:1px solid var(--warning);"></span> Below Target</span>
           <span style="display:flex; align-items:center; gap:0.35rem;"><span style="width:10px; height:10px; border-radius:3px; background:rgba(56,189,248,0.3); border:1px solid var(--accent);"></span> Worked</span>
           <span style="display:flex; align-items:center; gap:0.35rem;"><span style="width:10px; height:10px; border-radius:3px; background:rgba(148,163,184,0.15);"></span> Weekend / Off</span>
@@ -1196,7 +1196,7 @@
     const STORAGE_KEY = 'pms_token';
     const PROFILE_STORAGE_KEY = 'pms_profile';
     const THEME_STORAGE_KEY = 'pms_theme_color';
-    const TARGET_EFFECTIVE_SECONDS = 8 * 3600;
+    const TARGET_EFFECTIVE_SECONDS = (8 * 3600) + (30 * 60); // 8h 30m (30,600s)
 
     let liveTimerId = null;
     let employeeId = null;
@@ -1408,7 +1408,7 @@
     }
 
     // Hinglish Funny Hover Quotes
-    const TARGET_MET_LABELS = ['Good boy 👍', 'Target crushed 💪', 'Nailed it 🔥', '8h done ✅', 'On point 👌'];
+    const TARGET_MET_LABELS = ['Good boy 👍', 'Target crushed 💪', 'Nailed it 🔥', '8h 30m done ✅', 'On point 👌'];
     const TARGET_BELOW_LABELS = ['So close 😅', 'Regrets, we have a few 😔', 'Almost there next time 💪', 'Short by a bit 📉', 'Tomorrow we rise 🌅'];
 
     const HINGLISH_HOVER = {
@@ -1439,7 +1439,7 @@
       const effectiveSeconds = parseHHMM(record.totalAttendedHours);
       if (record.attendanceOk === 0 && effectiveSeconds === 0) return { text: 'W-OFF', cls: 'off' };
       if (effectiveSeconds === 0) return { text: 'No entries', cls: 'none' };
-      if (effectiveSeconds >= 8 * 3600) {
+      if (effectiveSeconds >= TARGET_EFFECTIVE_SECONDS) {
         const dateStr = (record.date || '').toString();
         let idx = 0;
         for (let i = 0; i < dateStr.length; i++) idx += dateStr.charCodeAt(i);
@@ -1633,7 +1633,7 @@
         els.grossHours.textContent = '00:00:00';
         els.status.textContent = 'No Punch';
         els.status.className = 'status-badge none';
-        if (els.remaining) els.remaining.textContent = '8h 00m';
+        if (els.remaining) els.remaining.textContent = '8h 30m';
         if (els.completeAt) els.completeAt.textContent = '—';
         updateProgress(0);
         return;
@@ -1905,7 +1905,7 @@
         : 0;
       avgBreakEl.textContent = avgBreakSecs > 0 ? formatDurationShort(avgBreakSecs) : '—';
 
-      const crushedCount = presentDays.filter(d => parseHHMM(d.totalAttendedHours) >= 8 * 3600).length;
+      const crushedCount = presentDays.filter(d => parseHHMM(d.totalAttendedHours) >= TARGET_EFFECTIVE_SECONDS).length;
       crushedEl.textContent = `${Math.round((crushedCount / presentDays.length) * 100)}%`;
     }
 
